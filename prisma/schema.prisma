@@ -1,0 +1,62 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  password      String
+  role          String    @default("OWNER")
+  flatNumber    String?
+  folderPassword String?  // Encrypted password for individual folder access
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  documents     Document[]
+  sessions      Session[]
+  
+  @@map("users")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("sessions")
+}
+
+model Document {
+  id              String         @id @default(cuid())
+  title           String
+  description     String?
+  documentType    String
+  fileUrl         String
+  fileName        String
+  fileSize        Int
+  mimeType        String
+  status          String         @default("ACTIVE")
+  version         Int            @default(1)
+  shareholding    String?        // For share certificates (e.g., "50%", "33.33%")
+  isSuperseded    Boolean        @default(false)
+  supersededDate  DateTime?
+  supersededBy    String?        // ID of the document that supersedes this one
+  stampImageUrl   String?        // URL of the digital stamp image
+  userId          String
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  
+  @@index([userId])
+  @@index([documentType])
+  @@index([status])
+  @@map("documents")
+}

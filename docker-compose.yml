@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: society_app_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: society_user
+      POSTGRES_PASSWORD: society_password
+      POSTGRES_DB: society_app
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: society_app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: "postgresql://society_user:society_password@postgres:5432/society_app?schema=public"
+      NEXTAUTH_SECRET: "change-this-in-production"
+      NEXTAUTH_URL: "http://localhost:3000"
+      NODE_ENV: "production"
+    volumes:
+      - ./uploads:/app/uploads
+    depends_on:
+      - postgres
+    command: sh -c "npx prisma migrate deploy && node server.js"
+
+volumes:
+  postgres_data:
