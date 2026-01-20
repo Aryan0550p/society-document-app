@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { readFile, writeFile } from "fs/promises";
-import path from "path";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+import cloudinary from "@/lib/cloudinary";
 
 export async function POST(
   request: NextRequest,
@@ -19,9 +18,9 @@ export async function POST(
       return NextResponse.json({ error: "Document not found" }, { status: 404 });
     }
 
-    // Load the PDF
-    const filePath = path.join(process.cwd(), "uploads", document.userId, document.fileName);
-    const existingPdfBytes = await readFile(filePath);
+    // Download PDF from Cloudinary
+    const response = await fetch(document.fileUrl);
+    const existingPdfBytes = await response.arrayBuffer();
     const pdfDoc = await PDFDocument.load(existingPdfBytes);
 
     // Add digital stamp to first page
@@ -63,15 +62,34 @@ export async function POST(
 
     // Save the modified PDF
     const pdfBytes = await pdfDoc.save();
-    await writeFile(filePath, pdfBytes);
+    const buffer = Buffer.from(pdfBytes);
 
-    // Update database
+    // Upload stamped version back to Cloudinary
+    const uploadResult = await new Promise<any>((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder: `society-documents/${document.userId}`,
+          resource_type: "auto",
+          format: "pdf",
+          public_id: `superseded-${Date.now()}-${document.fileName}`,
+        },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      );
+      uploadStream.end(buffer);
+    });
+
+    // Update database with new stamped file URL
     await prisma.document.update({
       where: { id },
       data: {
         isSuperseded: true,
         supersededDate: new Date(),
         status: "SUPERSEDED",
+        fileUrl: uploadResult.secure_url,
+        stampImageUrl: uploadResult.secure_url,
       },
     });
 

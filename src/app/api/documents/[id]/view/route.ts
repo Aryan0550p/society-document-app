@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { readFile } from "fs/promises";
-import path from "path";
 
 export async function GET(
   request: NextRequest,
@@ -18,15 +16,8 @@ export async function GET(
       return NextResponse.json({ error: "Document not found" }, { status: 404 });
     }
 
-    const filePath = path.join(process.cwd(), "uploads", document.userId, document.fileName);
-    const fileBuffer = await readFile(filePath);
-
-    return new NextResponse(fileBuffer, {
-      headers: {
-        "Content-Type": "application/pdf",
-        "Content-Disposition": `inline; filename="${document.fileName}"`,
-      },
-    });
+    // Redirect to Cloudinary URL
+    return NextResponse.redirect(document.fileUrl);
   } catch (error) {
     console.error("View document error:", error);
     return NextResponse.json({ error: "Failed to load document" }, { status: 500 });
