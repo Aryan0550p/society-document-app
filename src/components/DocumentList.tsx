@@ -15,6 +15,7 @@ interface Document {
   documentType: string;
   description: string | null;
   fileName: string;
+  fileUrl: string;
   fileSize: number;
   status: string;
   isSuperseded: boolean;
@@ -162,7 +163,7 @@ export default function DocumentList({ userId }: DocumentListProps) {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => window.open(`/api/documents/${doc.id}/view`, "_blank")}
+                onClick={() => window.open(doc.fileUrl, "_blank")}
               >
                 <Eye className="h-4 w-4" />
               </Button>
