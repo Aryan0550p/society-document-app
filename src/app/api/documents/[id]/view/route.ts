@@ -16,8 +16,17 @@ export async function GET(
       return NextResponse.json({ error: "Document not found" }, { status: 404 });
     }
 
-    // Redirect to Cloudinary URL
-    return NextResponse.redirect(document.fileUrl);
+    // Fetch PDF from Cloudinary
+    const response = await fetch(document.fileUrl);
+    const pdfBuffer = await response.arrayBuffer();
+
+    // Serve with proper headers to open in browser
+    return new NextResponse(pdfBuffer, {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `inline; filename="${document.fileName}"`,
+      },
+    });
   } catch (error) {
     console.error("View document error:", error);
     return NextResponse.json({ error: "Failed to load document" }, { status: 500 });

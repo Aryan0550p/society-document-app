@@ -163,7 +163,7 @@ export default function DocumentList({ userId }: DocumentListProps) {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => window.open(doc.fileUrl, "_blank")}
+                onClick={() => window.open(`/api/documents/${doc.id}/view`, "_blank")}
               >
                 <Eye className="h-4 w-4" />
               </Button>
