@@ -69,9 +69,8 @@ export async function POST(
       const uploadStream = cloudinary.uploader.upload_stream(
         {
           folder: `society-documents/${document.userId}`,
-          resource_type: "auto",
-          format: "pdf",
-          public_id: `superseded-${Date.now()}-${document.fileName}`,
+          resource_type: "raw", // Use "raw" for PDFs
+          public_id: `superseded-${Date.now()}-${document.fileName.replace(/\.[^/.]+$/, "")}`,
         },
         (error, result) => {
           if (error) reject(error);
